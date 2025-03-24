@@ -7,6 +7,7 @@ import { LvComponent } from './components/LvComponent';
 import { ProductComponent } from './components/ProductComponent';
 import CartComponent from './components/CartComponent';
 import { CartProvider, useCart } from './components/CartContext';
+import { NewsComponent } from './components/NewsComponent';
 
 function HomeScreen() {
   return <LvComponent />;
@@ -18,6 +19,12 @@ function ProductScreen() {
 
 function CartScreen() {
   return <CartComponent />;
+}
+
+function NewsScreen() {
+  return (
+    <NewsComponent/>
+  );
 }
 
 function SettingsScreen() {
@@ -33,7 +40,7 @@ const Tab = createBottomTabNavigator();
 function AppNavigator() {
   // Lấy số lượng giỏ hàng từ context
   const { cartCount } = useCart();
-  
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -45,6 +52,8 @@ function AppNavigator() {
             iconName = focused ? 'pricetag' : 'pricetag-outline';
           } else if (route.name === 'Cart') {
             iconName = focused ? 'cart' : 'cart-outline';
+          } else if (route.name === 'News') {
+            iconName = focused ? 'newspaper' : 'newspaper-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'settings' : 'settings-outline';
           }
@@ -60,10 +69,10 @@ function AppNavigator() {
         name="Cart"
         component={CartScreen}
         options={{
-          // Nếu cartCount > 0 thì hiển thị badge, ngược lại không hiển thị
           tabBarBadge: cartCount > 0 ? cartCount : null,
         }}
       />
+      <Tab.Screen name="News" component={NewsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

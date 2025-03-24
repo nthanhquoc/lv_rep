@@ -190,5 +190,20 @@
       "url": "https://res.cloudinary.com/drszapjl6/image/upload/t_test/v1742522686/W_BC_LG_TRUNKIE_FEB25_DI3_tlbtml.webp"
     }
   ],
-  "cart": []
+  "cart": [],
+  "customer": [],
+  "news": [
+    {
+      "id": "1",
+      "title": "Bộ Sưu Tập Thu- Đông 2025 dành cho Nam",
+      "dateCreate": "21/1/2025",
+      "image": "https://res.cloudinary.com/drszapjl6/image/upload/v1742805411/louis-vuitton--MENS_FW25_SHOW_FINALE_DI2_prqkta.webp"
+    },
+    {
+      "id": "2",
+      "title": "Buổi Trình Diễn Bộ Sưu Tập Xuân-Hè 2025",
+      "dateCrate": "1/10/2024",
+      "image": "https://res.cloudinary.com/drszapjl6/image/upload/v1742805414/louis-vuitton--WOMEN_SS25_SHOW__KEY_LOOKS_LV-COM_DI2_adkyer.jpg"
+    }
+  ]
 }

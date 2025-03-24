@@ -126,7 +126,6 @@ export const CartComponent = () => {
         <TouchableOpacity
           style={styles.paymentButton}
           onPress={() => {
-            // Sự kiện thanh toán sẽ được xử lý ở đây
           }}
         >
           <Text style={styles.paymentButtonText}>Thanh toán</Text>
