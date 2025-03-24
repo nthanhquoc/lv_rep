@@ -26,3 +26,12 @@ export const updateCartItem = async(id,updateData)=>{
         console.log(error)
     }
 }
+
+export const deleteItemCart = async(id)=>{
+    try {
+        const response = await axios.delete(`http://10.10.8.75:8080/cart/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(error);
+    }
+}
