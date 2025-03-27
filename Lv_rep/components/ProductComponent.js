@@ -15,7 +15,7 @@ import { getData as getCategoryData } from "../services/Lvservice";
 import { HeaderComponent } from "./HeaderComponent";
 import { useRoute } from "@react-navigation/native";
 import { addToCart, getDataCart, updateCartItem } from "../services/CartService";
-import { useCart } from "../components/CartContext"; // Import thêm useCart
+import { useCart } from "../components/CartContext";
 
 export const ProductComponent = () => {
   const route = useRoute();
@@ -58,12 +58,14 @@ export const ProductComponent = () => {
     fetchCategories();
   }, []);
 
+  // Vì category của product là một đối tượng, ta cần so sánh với categoryId.id
   const categoriesWithAll = [{ id: 0, name: "All" }, ...categories];
   const filteredProducts =
     selectedCategory === 0
       ? products
       : products.filter(
-          (item) => Number(item.categoryId) === Number(selectedCategory)
+          (item) =>
+            Number(item.categoryId?.id) === Number(selectedCategory)
         );
 
   const handleImagePress = (item) => {
@@ -74,23 +76,18 @@ export const ProductComponent = () => {
   // Hàm xử lý thêm sản phẩm vào giỏ hàng
   const handleAddToCart = async (item) => {
     try {
-      // Lấy dữ liệu giỏ hàng hiện tại
       const cart = await getDataCart();
-      // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
       const existingItem = cart.find((cartItem) => cartItem.id === item.id);
       if (existingItem) {
-        // Nếu đã có, tăng số lượng sản phẩm
         const updatedItem = {
           ...existingItem,
           quantity: existingItem.quantity + 1,
         };
         await updateCartItem(existingItem.id, updatedItem);
       } else {
-        // Nếu chưa có, thêm mới với số lượng = 1
         await addToCart({ ...item, quantity: 1 });
       }
       Alert.alert("Thông báo", "Đã thêm sản phẩm vào giỏ hàng");
-      // Cập nhật số lượng giỏ hàng ngay sau khi thêm sản phẩm
       fetchCartCount();
     } catch (error) {
       console.error("Error adding product to cart:", error);

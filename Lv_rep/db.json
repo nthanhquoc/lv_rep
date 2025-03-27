@@ -129,7 +129,7 @@
     },
     {
       "id": "16",
-      "name": "Nước Hoa Lv v2",
+      "name": "Nước Hoa Lv2",
       "price": "1500000",
       "image": "https://res.cloudinary.com/drszapjl6/image/upload/v1742542379/louis-vuitton-ombre-nomade--LP0095_PM2_Front_view_aep5bo.avif",
       "categoryId": 3
@@ -190,7 +190,16 @@
       "url": "https://res.cloudinary.com/drszapjl6/image/upload/t_test/v1742522686/W_BC_LG_TRUNKIE_FEB25_DI3_tlbtml.webp"
     }
   ],
-  "cart": [],
+  "cart": [
+    {
+      "id": "15",
+      "name": "Nước Hoa Lv",
+      "price": "1500000",
+      "image": "https://res.cloudinary.com/drszapjl6/image/upload/v1742542380/louis-vuitton-lv-x-tm-spell-on-you--LP0414_PM2_Front_view_cop5qi.avif",
+      "categoryId": 3,
+      "quantity": 1
+    }
+  ],
   "customer": [],
   "news": [
     {

@@ -9,7 +9,13 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { useFocusEffect } from "@react-navigation/native";
-import { deleteItemCart, getDataCart, updateCartItem } from "../services/CartService";
+import {
+  deleteItemCart,
+  getDataCart,
+  updateCartItem,
+  clearCart, // Import clearCart
+} from "../services/CartService";
+import { createOrder } from "../services/OrderService"; // Import OrderService
 import { useCart } from "../components/CartContext";
 
 export const CartComponent = () => {
@@ -25,7 +31,7 @@ export const CartComponent = () => {
     }
   };
 
-  // Sử dụng useFocusEffect để tự động cập nhật dữ liệu khi màn hình được focus
+  // Cập nhật dữ liệu khi màn hình được focus
   useFocusEffect(
     useCallback(() => {
       fetchCartData();
@@ -69,29 +75,53 @@ export const CartComponent = () => {
 
   const calculateTotal = () => {
     return cartItems.reduce(
-      (total, item) => total + Number(item.price) * item.quantity,
+      (total, item) => total + Number(item.product.price) * item.quantity,
       0
     );
+  };
+
+  const checkout = async () => {
+    try {
+      // Chuẩn bị dữ liệu đơn hàng dựa trên giỏ hàng hiện có
+      const orderData = {
+        totalAmount: calculateTotal(),
+        orderItems: cartItems.map((item) => ({
+          quantity: item.quantity,
+          product: item.product,
+        })),
+      };
+
+      const order = await createOrder(orderData);
+      // Sau khi tạo đơn hàng thành công, gọi API xóa giỏ hàng ở backend
+      await clearCart();
+      // Cập nhật lại state giỏ hàng và số lượng sản phẩm
+      setCartItems([]);
+      fetchCartCount();
+      Alert.alert("Thành công", "Đơn hàng đã được tạo");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      Alert.alert("Lỗi", "Không thể tạo đơn hàng");
+    }
   };
 
   const renderCartItem = ({ item }) => (
     <View style={styles.cartItem}>
       <View style={styles.row}>
-        {item.image && (
+        {item.product.image && (
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: item.product.image }}
             style={styles.productImage}
             contentFit="contain"
           />
         )}
         <View style={styles.details}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemName}>{item.product.name}</Text>
           <View style={styles.priceQuantityRow}>
             <Text style={styles.itemPrice}>
               {new Intl.NumberFormat("vi-VN", {
                 style: "currency",
                 currency: "VND",
-              }).format(Number(item.price))}
+              }).format(Number(item.product.price))}
             </Text>
             <View style={styles.quantityRow}>
               <TouchableOpacity
@@ -125,8 +155,7 @@ export const CartComponent = () => {
       <View style={styles.totalContainer}>
         <TouchableOpacity
           style={styles.paymentButton}
-          onPress={() => {
-          }}
+          onPress={checkout}  // Gọi hàm checkout khi người dùng nhấn thanh toán
         >
           <Text style={styles.paymentButtonText}>Thanh toán</Text>
         </TouchableOpacity>
