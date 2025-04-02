@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getNews } from "../services/NewsService";
-import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Image, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export const NewsComponent = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
     fetchNews();
@@ -21,17 +23,28 @@ export const NewsComponent = () => {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.newsItem}>
-      <Image source={{ uri: item.image }} style={styles.newsImage} />
-      <View style={styles.newsInfo}>
-        <Text style={styles.newsTitle}>{item.title}</Text>
-        <Text style={styles.newsDate}>
-          {item.dateCreate ? item.dateCreate : item.dateCrate}
-        </Text>
-      </View>
-    </View>
-  );
+  const renderItem = ({ item }) => {
+    // Sử dụng item.dateCreate nếu có, nếu không dùng item.dateCrate
+    const dateValue = item.dateCreate ? item.dateCreate : item.dateCrate;
+    // Chuyển đổi chuỗi ngày sang định dạng Date và định dạng theo "ngày tháng năm"
+    const formattedDate = new Date(dateValue).toLocaleDateString('vi-VN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    return (
+      <TouchableOpacity onPress={() => navigation.navigate('NewsDetail', { newsId: item.id })}>
+        <View style={styles.newsItem}>
+          <Image source={{ uri: item.image }} style={styles.newsImage} />
+          <View style={styles.newsInfo}>
+            <Text style={styles.newsTitle}>{item.title}</Text>
+            <Text style={styles.newsDate}>{formattedDate}</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (

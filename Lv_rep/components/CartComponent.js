@@ -6,21 +6,26 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  Modal,
 } from "react-native";
 import { Image } from "expo-image";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
   deleteItemCart,
   getDataCart,
   updateCartItem,
-  clearCart, // Import clearCart
+  clearCart,
 } from "../services/CartService";
-import { createOrder } from "../services/OrderService"; // Import OrderService
+import { createOrder } from "../services/OrderService";
+import { createPayment } from "../services/PaymentService";
 import { useCart } from "../components/CartContext";
 
 export const CartComponent = () => {
   const [cartItems, setCartItems] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const { fetchCartCount } = useCart();
+  const navigation = useNavigation();
 
   const fetchCartData = async () => {
     try {
@@ -31,7 +36,6 @@ export const CartComponent = () => {
     }
   };
 
-  // Cập nhật dữ liệu khi màn hình được focus
   useFocusEffect(
     useCallback(() => {
       fetchCartData();
@@ -56,9 +60,7 @@ export const CartComponent = () => {
     try {
       if (item.quantity === 1) {
         await deleteItemCart(item.id);
-        setCartItems((prevItems) =>
-          prevItems.filter((it) => it.id !== item.id)
-        );
+        setCartItems((prevItems) => prevItems.filter((it) => it.id !== item.id));
       } else {
         const updatedItem = { ...item, quantity: item.quantity - 1 };
         await updateCartItem(item.id, updatedItem);
@@ -80,9 +82,10 @@ export const CartComponent = () => {
     );
   };
 
-  const checkout = async () => {
+  // Tạo đơn hàng và chuyển hướng thanh toán theo phương thức (VNPAY hoặc PAYPAL)
+  const processPayment = async (paymentMethod) => {
+    setIsProcessing(true);
     try {
-      // Chuẩn bị dữ liệu đơn hàng dựa trên giỏ hàng hiện có
       const orderData = {
         totalAmount: calculateTotal(),
         orderItems: cartItems.map((item) => ({
@@ -90,18 +93,43 @@ export const CartComponent = () => {
           product: item.product,
         })),
       };
-
+  
       const order = await createOrder(orderData);
-      // Sau khi tạo đơn hàng thành công, gọi API xóa giỏ hàng ở backend
-      await clearCart();
-      // Cập nhật lại state giỏ hàng và số lượng sản phẩm
-      setCartItems([]);
-      fetchCartCount();
-      Alert.alert("Thành công", "Đơn hàng đã được tạo");
-    } catch (error) {
-      console.error("Error creating order:", error);
-      Alert.alert("Lỗi", "Không thể tạo đơn hàng");
+      // Gửi order.id và paymentMethod cho backend để tạo thanh toán
+      const paymentResponse = await createPayment(order.id, paymentMethod);
+
+      
+      console.log("Payment response:", paymentResponse);
+      const paymentUrl =
+      typeof paymentResponse === "string"
+        ? paymentResponse
+        : paymentResponse.approvalUrl;
+
+    if (paymentUrl) {
+      if (paymentMethod === "VNPAY") {
+        navigation.navigate("VnPayScreen", { url: paymentUrl });
+      } else {
+        navigation.navigate("PaymentScreen", { url: paymentUrl });
+      }
+    } else {
+      Alert.alert("Lỗi", "Không thể lấy đường dẫn thanh toán");
     }
+  } catch (error) {
+    console.error("Error during checkout:", error);
+    Alert.alert("Lỗi", "Không thể tạo đơn hàng hoặc thanh toán");
+  } finally {
+    setIsProcessing(false);
+    setIsModalVisible(false);
+  }
+  };
+
+  // Hiển thị modal lựa chọn phương thức thanh toán
+  const checkout = () => {
+    if (cartItems.length === 0) {
+      Alert.alert("Thông báo", "Giỏ hàng đang trống!");
+      return;
+    }
+    setIsModalVisible(true);
   };
 
   const renderCartItem = ({ item }) => (
@@ -154,10 +182,18 @@ export const CartComponent = () => {
       />
       <View style={styles.totalContainer}>
         <TouchableOpacity
-          style={styles.paymentButton}
-          onPress={checkout}  // Gọi hàm checkout khi người dùng nhấn thanh toán
+          style={[
+            styles.paymentButton,
+            (cartItems.length === 0 || isProcessing) && styles.disabledButton,
+          ]}
+          onPress={checkout}
+          disabled={cartItems.length === 0 || isProcessing}
         >
-          <Text style={styles.paymentButtonText}>Thanh toán</Text>
+          {isProcessing ? (
+            <Text style={styles.paymentButtonText}>Đang xử lý</Text>
+          ) : (
+            <Text style={styles.paymentButtonText}>Thanh toán</Text>
+          )}
         </TouchableOpacity>
         <Text style={styles.totalText}>
           Tổng tiền:{" "}
@@ -167,6 +203,41 @@ export const CartComponent = () => {
           }).format(calculateTotal())}
         </Text>
       </View>
+      
+      {/* Modal lựa chọn phương thức thanh toán */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Chọn phương thức thanh toán</Text>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => processPayment("VNPAY")}
+              disabled={isProcessing}
+            >
+              <Text style={styles.modalButtonText}>VNPAY</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => processPayment("PAYPAL")}
+              disabled={isProcessing}
+            >
+              <Text style={styles.modalButtonText}>PayPal</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => setIsModalVisible(false)}
+              disabled={isProcessing}
+            >
+              <Text style={styles.modalButtonText}>Hủy</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -251,7 +322,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
   },
+  disabledButton: {
+    backgroundColor: "#ccc",
+  },
   paymentButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  // Style cho Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "80%",
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: "#007BFF",
+    width: "100%",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginVertical: 6,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#888",
+  },
+  modalButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
